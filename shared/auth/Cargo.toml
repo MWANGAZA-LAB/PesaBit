@@ -1,0 +1,16 @@
+[package]
+name = "shared-auth"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+jsonwebtoken = { workspace = true }
+argon2 = { workspace = true }
+rand = { workspace = true }
+serde = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+axum = { workspace = true }
+tracing = { workspace = true }
+shared-types = { path = "../types" }
+shared-errors = { path = "../errors" }

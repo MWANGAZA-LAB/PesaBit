@@ -1,0 +1,48 @@
+[package]
+name = "payment-service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Shared libraries
+shared-types = { path = "../../shared/types" }
+shared-errors = { path = "../../shared/errors" }
+shared-database = { path = "../../shared/database" }
+shared-auth = { path = "../../shared/auth" }
+shared-tracing = { path = "../../shared/tracing" }
+
+# Web framework and async runtime
+axum = { workspace = true }
+tokio = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+
+# Database
+sqlx = { workspace = true }
+
+# Serialization and validation
+serde = { workspace = true }
+serde_json = { workspace = true }
+validator = { workspace = true }
+
+# Lightning and Bitcoin
+lightning = { workspace = true }
+bitcoin = { workspace = true }
+bdk = { workspace = true }
+
+# Utilities
+uuid = { workspace = true }
+chrono = { workspace = true }
+rust_decimal = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+
+# HTTP client for external APIs
+reqwest = { workspace = true }
+
+# Cryptography
+rand = { workspace = true }
+
+[dev-dependencies]
+mockall = { workspace = true }
+wiremock = { workspace = true }

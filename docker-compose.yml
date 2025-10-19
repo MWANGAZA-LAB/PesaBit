@@ -1,0 +1,186 @@
+version: '3.8'
+
+services:
+  # Database Services
+  postgres:
+    image: postgres:16-alpine
+    container_name: pesabit-postgres
+    environment:
+      POSTGRES_DB: pesabit
+      POSTGRES_USER: pesabit
+      POSTGRES_PASSWORD: pesabit_dev_password
+      POSTGRES_MULTIPLE_DATABASES: pesabit_test
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pesabit -d pesabit"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pesabit-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: pesabit-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass redis_dev_password
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pesabit-network
+
+  # Core Services
+  user-service:
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+    container_name: pesabit-user-service
+    environment:
+      - RUST_ENV=development
+      - DATABASE_URL=postgresql://pesabit:pesabit_dev_password@postgres:5432/pesabit
+      - REDIS_URL=redis://:redis_dev_password@redis:6379
+      - JWT_SECRET=dev_jwt_secret_key_change_in_production
+      - SMS_PROVIDER_URL=http://localhost:8080/sms
+      - SERVICE_PORT=8001
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./services/user-service:/app/services/user-service
+      - ./shared:/app/shared
+      - cargo_cache:/usr/local/cargo
+    networks:
+      - pesabit-network
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: services/payment-service/Dockerfile
+    container_name: pesabit-payment-service
+    environment:
+      - RUST_ENV=development
+      - DATABASE_URL=postgresql://pesabit:pesabit_dev_password@postgres:5432/pesabit
+      - REDIS_URL=redis://:redis_dev_password@redis:6379
+      - MPESA_CONSUMER_KEY=your_mpesa_consumer_key
+      - MPESA_CONSUMER_SECRET=your_mpesa_consumer_secret
+      - MPESA_SHORTCODE=174379
+      - MPESA_PASSKEY=your_mpesa_passkey
+      - MPESA_SANDBOX_URL=https://sandbox.safaricom.co.ke
+      - LIGHTNING_NETWORK_NODE=http://localhost:9735
+      - SERVICE_PORT=8002
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./services/payment-service:/app/services/payment-service
+      - ./shared:/app/shared
+      - cargo_cache:/usr/local/cargo
+    networks:
+      - pesabit-network
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: pesabit-api-gateway
+    environment:
+      - RUST_ENV=development
+      - REDIS_URL=redis://:redis_dev_password@redis:6379
+      - USER_SERVICE_URL=http://user-service:8001
+      - PAYMENT_SERVICE_URL=http://payment-service:8002
+      - JWT_SECRET=dev_jwt_secret_key_change_in_production
+      - RATE_LIMIT_REQUESTS_PER_MINUTE=100
+      - SERVICE_PORT=3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - user-service
+      - payment-service
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./services/api-gateway:/app/services/api-gateway
+      - ./shared:/app/shared
+      - cargo_cache:/usr/local/cargo
+    networks:
+      - pesabit-network
+    restart: unless-stopped
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: pesabit-frontend
+    environment:
+      - VITE_API_URL=http://localhost:3000
+      - NODE_ENV=development
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api-gateway
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - pesabit-network
+    restart: unless-stopped
+
+  # Development Tools
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pesabit-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@pesabit.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - pesabit-network
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: pesabit-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:redis_dev_password
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - pesabit-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  pgadmin_data:
+  cargo_cache:
+
+networks:
+  pesabit-network:
+    driver: bridge

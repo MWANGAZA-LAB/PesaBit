@@ -1,0 +1,216 @@
+# PesaBit Staging Environment Configuration
+# This configuration sets up a production-like staging environment for final testing
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres-staging:
+    image: postgres:16-alpine
+    container_name: pesabit-postgres-staging
+    environment:
+      POSTGRES_DB: pesabit_staging
+      POSTGRES_USER: pesabit_staging
+      POSTGRES_PASSWORD: ${STAGING_DB_PASSWORD:-pesabit_staging_password}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pesabit_staging -d pesabit_staging"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pesabit-staging
+
+  # Redis Cache
+  redis-staging:
+    image: redis:7-alpine
+    container_name: pesabit-redis-staging
+    command: redis-server --requirepass ${STAGING_REDIS_PASSWORD:-redis_staging_password}
+    volumes:
+      - redis_staging_data:/data
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pesabit-staging
+
+  # API Gateway
+  api-gateway-staging:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: pesabit-api-gateway-staging
+    environment:
+      APP_ENV: staging
+      SERVICE_PORT: 3000
+      DATABASE_URL: postgresql://pesabit_staging:${STAGING_DB_PASSWORD:-pesabit_staging_password}@postgres-staging:5432/pesabit_staging
+      REDIS_URL: redis://:${STAGING_REDIS_PASSWORD:-redis_staging_password}@redis-staging:6379
+      JWT_SECRET: ${STAGING_JWT_SECRET:-staging_jwt_secret_key}
+      USER_SERVICE_URL: http://user-service-staging:8001
+      PAYMENT_SERVICE_URL: http://payment-service-staging:8002
+      RATE_LIMIT_REQUESTS_PER_MINUTE: 200
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000,https://staging.pesa.co.ke
+      RUST_LOG: info,api_gateway=debug,shared_auth=debug,shared_database=debug
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres-staging:
+        condition: service_healthy
+      redis-staging:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - pesabit-staging
+
+  # User Service
+  user-service-staging:
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+    container_name: pesabit-user-service-staging
+    environment:
+      APP_ENV: staging
+      SERVICE_PORT: 8001
+      DATABASE_URL: postgresql://pesabit_staging:${STAGING_DB_PASSWORD:-pesabit_staging_password}@postgres-staging:5432/pesabit_staging
+      REDIS_URL: redis://:${STAGING_REDIS_PASSWORD:-redis_staging_password}@redis-staging:6379
+      JWT_SECRET: ${STAGING_JWT_SECRET:-staging_jwt_secret_key}
+      RUST_LOG: info,user_service=debug,shared_auth=debug,shared_database=debug
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres-staging:
+        condition: service_healthy
+      redis-staging:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - pesabit-staging
+
+  # Payment Service
+  payment-service-staging:
+    build:
+      context: .
+      dockerfile: services/payment-service/Dockerfile
+    container_name: pesabit-payment-service-staging
+    environment:
+      APP_ENV: staging
+      SERVICE_PORT: 8002
+      DATABASE_URL: postgresql://pesabit_staging:${STAGING_DB_PASSWORD:-pesabit_staging_password}@postgres-staging:5432/pesabit_staging
+      REDIS_URL: redis://:${STAGING_REDIS_PASSWORD:-redis_staging_password}@redis-staging:6379
+      JWT_SECRET: ${STAGING_JWT_SECRET:-staging_jwt_secret_key}
+      MPESA_CONSUMER_KEY: ${STAGING_MPESA_CONSUMER_KEY:-staging_consumer_key}
+      MPESA_CONSUMER_SECRET: ${STAGING_MPESA_CONSUMER_SECRET:-staging_consumer_secret}
+      MPESA_SHORTCODE: 174379
+      MPESA_PASSKEY: ${STAGING_MPESA_PASSKEY:-staging_passkey}
+      MPESA_SANDBOX_URL: https://sandbox.safaricom.co.ke
+      LIGHTNING_NETWORK_NODE: http://localhost:9735
+      RUST_LOG: info,payment_service=debug,shared_database=debug
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres-staging:
+        condition: service_healthy
+      redis-staging:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - pesabit-staging
+
+  # Frontend
+  frontend-staging:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    container_name: pesabit-frontend-staging
+    environment:
+      VITE_API_BASE_URL: http://localhost:3000
+      VITE_APP_ENV: staging
+    ports:
+      - "5173:80"
+    depends_on:
+      - api-gateway-staging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - pesabit-staging
+
+  # Prometheus Monitoring
+  prometheus-staging:
+    image: prom/prometheus:latest
+    container_name: pesabit-prometheus-staging
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - pesabit-staging
+
+  # Grafana Dashboard
+  grafana-staging:
+    image: grafana/grafana:latest
+    container_name: pesabit-grafana-staging
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${STAGING_GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: false
+    volumes:
+      - grafana_staging_data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./infrastructure/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus-staging
+    networks:
+      - pesabit-staging
+
+  # Jaeger Tracing
+  jaeger-staging:
+    image: jaegertracing/all-in-one:latest
+    container_name: pesabit-jaeger-staging
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    networks:
+      - pesabit-staging
+
+volumes:
+  postgres_staging_data:
+  redis_staging_data:
+  grafana_staging_data:
+
+networks:
+  pesabit-staging:
+    driver: bridge

@@ -1,0 +1,390 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Bitcoin-themed CSS Variables */
+:root {
+  /* Bitcoin Orange/Gold Colors */
+  --bitcoin-orange: #f7931a;
+  --bitcoin-light: #ffb84d;
+  --bitcoin-dark: #cc7a00;
+  --bitcoin-gold: #ffd700;
+  
+  /* Dark Theme Colors */
+  --bg-dark: #0d1117;
+  --bg-darker: #010409;
+  --bg-card: #161b22;
+  --bg-card-hover: #1c2128;
+  
+  /* Text Colors */
+  --text-primary: #f0f6fc;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  
+  /* Accent Colors */
+  --green-success: #238636;
+  --green-light: #2ea043;
+  --red-danger: #da3633;
+  --blue-accent: #1f6feb;
+  
+  /* Border Colors */
+  --border-default: #30363d;
+  --border-light: #21262d;
+}
+
+/* Custom CSS for PesaBit */
+@layer base {
+  html {
+    /* Enable smooth scrolling */
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    /* Bitcoin-themed dark background */
+    background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
+    color: var(--text-primary);
+    /* Prevent pull-to-refresh on iOS */
+    overscroll-behavior-y: none;
+    /* Improve text rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Custom focus styles for better accessibility */
+  button:focus,
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: 2px solid var(--bitcoin-orange);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Bitcoin-themed Button Styles */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--bitcoin-orange) 0%, var(--bitcoin-dark) 100%);
+    color: white;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);
+    border: none;
+    cursor: pointer;
+  }
+  
+  .btn-primary:hover {
+    background: linear-gradient(135deg, var(--bitcoin-light) 0%, var(--bitcoin-orange) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(247, 147, 26, 0.4);
+  }
+  
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Secondary button style */
+  .btn-secondary {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid var(--border-default);
+    cursor: pointer;
+  }
+  
+  .btn-secondary:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--bitcoin-orange);
+  }
+  
+  .btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  /* Danger button style */
+  .btn-danger {
+    background: linear-gradient(135deg, var(--red-danger) 0%, #b91c1c 100%);
+    color: white;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    transition: all 0.2s ease-in-out;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .btn-danger:hover {
+    background: linear-gradient(135deg, #ef4444 0%, var(--red-danger) 100%);
+  }
+  
+  .btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  /* Input field style */
+  .input-field {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-default);
+    border-radius: 0.75rem;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .input-field:focus {
+    border-color: var(--bitcoin-orange);
+    box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.1);
+    outline: none;
+  }
+  
+  .input-field::placeholder {
+    color: var(--text-muted);
+  }
+  
+  /* Card style */
+  .card {
+    background: linear-gradient(135deg, var(--bg-card) 0%, rgba(22, 27, 34, 0.8) 100%);
+    border: 1px solid var(--border-default);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Balance display */
+  .balance-card {
+    background: linear-gradient(135deg, var(--bitcoin-orange) 0%, var(--bitcoin-dark) 100%);
+    color: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 8px 24px rgba(247, 147, 26, 0.3);
+  }
+  
+  /* Transaction item */
+  .transaction-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-light);
+    transition: background-color 0.15s ease-in-out;
+  }
+  
+  .transaction-item:last-child {
+    border-bottom: none;
+  }
+  
+  .transaction-item:hover {
+    background: var(--bg-card-hover);
+  }
+  
+  /* Loading spinner */
+  .spinner {
+    animation: spin 1s linear infinite;
+    border-radius: 50%;
+    border: 4px solid var(--border-default);
+    border-top-color: var(--bitcoin-orange);
+  }
+  
+  /* Status badges */
+  .status-completed {
+    background: rgba(35, 134, 54, 0.2);
+    color: var(--green-light);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  
+  .status-pending {
+    background: rgba(255, 184, 77, 0.2);
+    color: var(--bitcoin-light);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  
+  .status-failed {
+    background: rgba(218, 54, 51, 0.2);
+    color: #f87171;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  
+  /* Amount displays */
+  .amount-positive {
+    color: var(--green-light);
+    font-weight: 600;
+  }
+  
+  .amount-negative {
+    color: var(--red-danger);
+    font-weight: 600;
+  }
+  
+  /* Mobile-first responsive utilities */
+  .container-mobile {
+    max-width: 28rem;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+  
+  /* Safe area handling for iOS */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Touch-friendly tap targets */
+  .tap-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent text selection on buttons/interactive elements */
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* Animation utilities */
+  .fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slideUp {
+    from { 
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Loading skeleton */
+  .skeleton {
+    background: var(--border-default);
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    border-radius: 0.25rem;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  
+  /* Glass morphism effect with Bitcoin theme */
+  .glass {
+    backdrop-filter: blur(16px);
+    background: rgba(13, 17, 23, 0.8);
+    border: 1px solid var(--border-default);
+  }
+}
+
+/* Bitcoin-themed QR code frame animation */
+.qr-scan-frame {
+  animation: qrScan 2s infinite;
+}
+
+@keyframes qrScan {
+  0% { border-color: var(--bitcoin-orange); }
+  50% { border-color: var(--bitcoin-light); }
+  100% { border-color: var(--bitcoin-orange); }
+}
+
+/* iOS-style switches with Bitcoin theme */
+.switch {
+  position: relative;
+  display: inline-flex;
+  height: 1.5rem;
+  width: 2.75rem;
+  align-items: center;
+  border-radius: 9999px;
+  transition: background-color 0.2s ease-in-out;
+  background: var(--border-default);
+}
+
+.switch.enabled {
+  background: var(--bitcoin-orange);
+}
+
+.switch-thumb {
+  display: inline-block;
+  height: 1rem;
+  width: 1rem;
+  transform: translateX(0.25rem);
+  border-radius: 9999px;
+  background: white;
+  transition: transform 0.2s ease-in-out;
+}
+
+.switch.enabled .switch-thumb {
+  transform: translateX(1.25rem);
+}
+
+/* Number input customization (remove spinners on mobile) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Improve tap targets for mobile */
+@media (hover: none) and (pointer: coarse) {
+  button, 
+  [role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    min-height: 48px;
+  }
+}

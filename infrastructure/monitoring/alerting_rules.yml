@@ -1,0 +1,221 @@
+# PesaBit Alerting Rules for Prometheus
+# These rules define when alerts should be triggered based on metrics
+
+groups:
+  - name: pesabit.rules
+    rules:
+      # High-level service health alerts
+      - alert: ServiceDown
+        expr: up{job=~"pesabit-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PesaBit service {{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} has been down for more than 1 minute."
+
+      - alert: ServiceHighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate for {{ $labels.job }}"
+          description: "Error rate is {{ $value | humanizePercentage }} for service {{ $labels.job }}"
+
+      # Database alerts
+      - alert: DatabaseDown
+        expr: up{job="postgres-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL database has been down for more than 1 minute."
+
+      - alert: DatabaseHighConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database connection usage"
+          description: "Database connection usage is {{ $value | humanizePercentage }}"
+
+      - alert: DatabaseSlowQueries
+        expr: rate(pg_stat_database_tup_returned[5m]) / rate(pg_stat_database_tup_fetched[5m]) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow database queries detected"
+          description: "Database query efficiency is low for {{ $labels.datname }}"
+
+      # Redis alerts
+      - alert: RedisDown
+        expr: up{job="redis-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been down for more than 1 minute."
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis memory usage is {{ $value | humanizePercentage }}"
+
+      # Payment processing alerts
+      - alert: PaymentProcessingErrors
+        expr: rate(pesabit_payment_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High payment processing error rate"
+          description: "Payment error rate is {{ $value }} errors per second"
+
+      - alert: MpesaIntegrationErrors
+        expr: rate(pesabit_mpesa_errors_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "M-Pesa integration errors"
+          description: "M-Pesa error rate is {{ $value }} errors per second"
+
+      - alert: LightningNetworkErrors
+        expr: rate(pesabit_lightning_errors_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Lightning Network errors"
+          description: "Lightning Network error rate is {{ $value }} errors per second"
+
+      # Security alerts
+      - alert: HighFailedLoginAttempts
+        expr: rate(pesabit_auth_failures_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High failed login attempts"
+          description: "Failed login rate is {{ $value }} attempts per second"
+
+      - alert: SuspiciousActivity
+        expr: rate(pesabit_suspicious_requests_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Suspicious activity detected"
+          description: "Suspicious request rate is {{ $value }} requests per second"
+
+      - alert: RateLimitExceeded
+        expr: rate(pesabit_rate_limit_exceeded_total[5m]) > 20
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate limit violations"
+          description: "Rate limit exceeded {{ $value }} times per second"
+
+      # Performance alerts
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time for {{ $labels.job }}"
+          description: "95th percentile response time is {{ $value }}s"
+
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage for {{ $labels.job }}"
+          description: "CPU usage is {{ $value | humanizePercentage }}"
+
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes / 1024 / 1024 / 1024 > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage for {{ $labels.job }}"
+          description: "Memory usage is {{ $value }}GB"
+
+      # Business logic alerts
+      - alert: LowWalletBalances
+        expr: pesabit_wallet_balance_sats < 1000000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low wallet balance for user {{ $labels.user_id }}"
+          description: "Wallet balance is {{ $value }} sats"
+
+      - alert: ExchangeRateStale
+        expr: time() - pesabit_exchange_rate_timestamp > 3600
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Exchange rate data is stale"
+          description: "Exchange rate was last updated {{ $value }} seconds ago"
+
+      - alert: TransactionVolumeAnomaly
+        expr: abs(rate(pesabit_transactions_total[1h]) - rate(pesabit_transactions_total[1h] offset 1d)) / rate(pesabit_transactions_total[1h] offset 1d) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Transaction volume anomaly detected"
+          description: "Current transaction volume differs by {{ $value | humanizePercentage }} from yesterday"
+
+      # Infrastructure alerts
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk space is {{ $value | humanizePercentage }} full"
+
+      - alert: NetworkLatencyHigh
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="pesabit-api-gateway"}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High network latency"
+          description: "95th percentile latency is {{ $value }}s"
+
+      # Compliance and audit alerts
+      - alert: AuditLogFailures
+        expr: rate(pesabit_audit_log_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Audit log failures detected"
+          description: "Audit logging is failing at {{ $value }} failures per second"
+
+      - alert: ComplianceViolation
+        expr: pesabit_compliance_violations_total > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Compliance violation detected"
+          description: "Compliance violation: {{ $labels.violation_type }}"

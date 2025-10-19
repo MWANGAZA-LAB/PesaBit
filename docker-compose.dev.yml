@@ -1,0 +1,41 @@
+version: '3.8'
+
+# Development-specific overrides
+services:
+  user-service:
+    build:
+      target: development
+    environment:
+      - RUST_LOG=debug
+      - RUST_BACKTRACE=1
+    volumes:
+      - ./services/user-service/src:/app/services/user-service/src
+      - ./shared:/app/shared
+    command: cargo watch -x "run --bin user-service"
+
+  payment-service:
+    build:
+      target: development
+    environment:
+      - RUST_LOG=debug
+      - RUST_BACKTRACE=1
+    volumes:
+      - ./services/payment-service/src:/app/services/payment-service/src
+      - ./shared:/app/shared
+    command: cargo watch -x "run --bin payment-service"
+
+  api-gateway:
+    build:
+      target: development
+    environment:
+      - RUST_LOG=debug
+      - RUST_BACKTRACE=1
+    volumes:
+      - ./services/api-gateway/src:/app/services/api-gateway/src
+      - ./shared:/app/shared
+    command: cargo watch -x "run --bin api-gateway"
+
+  frontend:
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    command: npm run dev -- --host 0.0.0.0

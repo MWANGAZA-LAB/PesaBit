@@ -3,12 +3,18 @@ members = [
     "services/api-gateway",
     "services/user-service", 
     "services/payment-service",
-    "services/notification-service",
     "shared/database",
     "shared/auth",
     "shared/types",
     "shared/errors",
     "shared/tracing",
+    "shared/health",
+    "shared/config",
+    "shared/security",
+    "shared/openapi",
+    "shared/secrets",
+    "shared/certificates",
+    "shared/compliance",
 ]
 
 resolver = "2"
@@ -32,7 +38,7 @@ validator = { version = "0.18", features = ["derive"] }
 # Lightning and Bitcoin
 lightning = "0.0.118"  # LDK for Lightning Network
 bitcoin = "0.31"
-bdk = { version = "1.0.0-alpha.8", features = ["std"] }
+bdk = { version = "0.30.2", features = ["std"] }
 
 # Authentication and security
 jsonwebtoken = "9.2"
@@ -54,6 +60,7 @@ rust_decimal = { version = "1.33", features = ["serde"] }
 config = "0.14"
 anyhow = "1.0"
 thiserror = "1.0"
+async-trait = "0.1"
 
 # Testing
 mockall = "0.12"

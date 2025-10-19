@@ -1,0 +1,470 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "PesaBit Production Monitoring",
+    "tags": ["pesabit", "production", "monitoring"],
+    "style": "dark",
+    "timezone": "browser",
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Overview",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=~\"pesabit-.*\"}",
+            "legendFormat": "{{ job }}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": 0
+                },
+                {
+                  "color": "green",
+                  "value": 1
+                }
+              ]
+            },
+            "mappings": [],
+            "unit": "short"
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "Request Rate by Service",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{ job }} - {{ method }} {{ status }}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Requests/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 3,
+        "title": "Response Time Percentiles",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile - {{ job }}"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile - {{ job }}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Response Time (s)",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        }
+      },
+      {
+        "id": 4,
+        "title": "Error Rate by Service",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{status=~\"5..\"}[5m]) / rate(http_requests_total[5m])",
+            "legendFormat": "{{ job }} - Error Rate"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Error Rate",
+            "min": 0,
+            "max": 1
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        }
+      },
+      {
+        "id": 5,
+        "title": "Database Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "pg_stat_database_numbackends",
+            "legendFormat": "Active Connections - {{ datname }}"
+          },
+          {
+            "expr": "pg_settings_max_connections",
+            "legendFormat": "Max Connections"
+          },
+          {
+            "expr": "rate(pg_stat_database_tup_returned[5m])",
+            "legendFormat": "Tuples Returned/sec - {{ datname }}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Connections / Tuples/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        }
+      },
+      {
+        "id": 6,
+        "title": "Redis Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "redis_memory_used_bytes",
+            "legendFormat": "Used Memory"
+          },
+          {
+            "expr": "redis_memory_max_bytes",
+            "legendFormat": "Max Memory"
+          },
+          {
+            "expr": "rate(redis_commands_processed_total[5m])",
+            "legendFormat": "Commands/sec"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Memory (bytes) / Commands/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        }
+      },
+      {
+        "id": 7,
+        "title": "Payment Processing Metrics",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(pesabit_payments_total[5m])",
+            "legendFormat": "Payments/sec - {{ type }}"
+          },
+          {
+            "expr": "rate(pesabit_payment_errors_total[5m])",
+            "legendFormat": "Payment Errors/sec"
+          },
+          {
+            "expr": "pesabit_wallet_balance_sats",
+            "legendFormat": "Total Wallet Balance (sats)"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Transactions/sec / Balance",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        }
+      },
+      {
+        "id": 8,
+        "title": "Security Metrics",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(pesabit_auth_failures_total[5m])",
+            "legendFormat": "Auth Failures/sec"
+          },
+          {
+            "expr": "rate(pesabit_rate_limit_exceeded_total[5m])",
+            "legendFormat": "Rate Limit Exceeded/sec"
+          },
+          {
+            "expr": "rate(pesabit_suspicious_requests_total[5m])",
+            "legendFormat": "Suspicious Requests/sec"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Events/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 32
+        }
+      },
+      {
+        "id": 9,
+        "title": "M-Pesa Integration Status",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(pesabit_mpesa_requests_total[5m])",
+            "legendFormat": "M-Pesa Requests/sec"
+          },
+          {
+            "expr": "rate(pesabit_mpesa_errors_total[5m])",
+            "legendFormat": "M-Pesa Errors/sec"
+          },
+          {
+            "expr": "pesabit_mpesa_success_rate",
+            "legendFormat": "M-Pesa Success Rate"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Requests/sec / Success Rate",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 32
+        }
+      },
+      {
+        "id": 10,
+        "title": "Lightning Network Status",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(pesabit_lightning_payments_total[5m])",
+            "legendFormat": "Lightning Payments/sec"
+          },
+          {
+            "expr": "rate(pesabit_lightning_errors_total[5m])",
+            "legendFormat": "Lightning Errors/sec"
+          },
+          {
+            "expr": "pesabit_lightning_channels_active",
+            "legendFormat": "Active Channels"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Payments/sec / Channels",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 40
+        }
+      },
+      {
+        "id": 11,
+        "title": "KYC/AML Compliance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "pesabit_kyc_verifications_total",
+            "legendFormat": "KYC Verifications - {{ status }}"
+          },
+          {
+            "expr": "pesabit_aml_screenings_total",
+            "legendFormat": "AML Screenings - {{ risk_level }}"
+          },
+          {
+            "expr": "pesabit_compliance_alerts_total",
+            "legendFormat": "Compliance Alerts"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Count",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 40
+        }
+      },
+      {
+        "id": 12,
+        "title": "Business Metrics",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "pesabit_total_transaction_volume_kes",
+            "legendFormat": "Total Transaction Volume (KES)"
+          },
+          {
+            "expr": "pesabit_active_users_total",
+            "legendFormat": "Active Users"
+          },
+          {
+            "expr": "pesabit_new_registrations_total",
+            "legendFormat": "New Registrations"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Volume / Users",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 48
+        }
+      },
+      {
+        "id": 13,
+        "title": "Infrastructure Health",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "node_cpu_seconds_total",
+            "legendFormat": "CPU Usage - {{ instance }}"
+          },
+          {
+            "expr": "node_memory_MemAvailable_bytes",
+            "legendFormat": "Available Memory - {{ instance }}"
+          },
+          {
+            "expr": "node_filesystem_avail_bytes",
+            "legendFormat": "Available Disk Space - {{ instance }}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "CPU / Memory / Disk",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 48
+        }
+      },
+      {
+        "id": 14,
+        "title": "Alert Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "ALERTS{alertstate=\"firing\"}",
+            "legendFormat": "Firing Alerts"
+          },
+          {
+            "expr": "ALERTS{alertstate=\"pending\"}",
+            "legendFormat": "Pending Alerts"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "red",
+                  "value": 5
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 56
+        }
+      }
+    ],
+    "schemaVersion": 27,
+    "version": 1,
+    "links": [
+      {
+        "title": "PesaBit API Documentation",
+        "url": "https://api.pesa.co.ke/docs",
+        "type": "link"
+      },
+      {
+        "title": "Prometheus",
+        "url": "http://prometheus:9090",
+        "type": "link"
+      },
+      {
+        "title": "Jaeger Tracing",
+        "url": "http://jaeger:16686",
+        "type": "link"
+      }
+    ]
+  }
+}

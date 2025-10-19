@@ -1,0 +1,44 @@
+[package]
+name = "api-gateway"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Shared libraries
+shared-types = { path = "../../shared/types" }
+shared-errors = { path = "../../shared/errors" }
+shared-database = { path = "../../shared/database" }
+shared-auth = { path = "../../shared/auth" }
+shared-tracing = { path = "../../shared/tracing" }
+shared-config = { path = "../../shared/config" }
+shared-security = { path = "../../shared/security" }
+
+# Web framework and async runtime
+axum = { workspace = true }
+tokio = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+
+# HTTP client for calling other services
+reqwest = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Utilities
+uuid = { workspace = true }
+chrono = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+
+# Rate limiting and caching
+redis = { workspace = true }
+
+# Additional dependencies
+async-trait = "0.1"
+md5 = "0.7"
+
+[dev-dependencies]
+mockall = { workspace = true }
+wiremock = { workspace = true }

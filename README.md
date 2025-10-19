@@ -1,13 +1,18 @@
-# PesaBit⚡ - Lightning-M-Pesa Bridge
+# PesaBit - Lightning-Fast Money 🚀
 
-> Lightning-fast Bitcoin payments for Kenya. Send money globally in 2 minutes for <1% fee.
+> Send money globally in 2 minutes via Bitcoin Lightning Network and M-Pesa
 
-## What is PesaBit?
+PesaBit is a revolutionary payment bridge that connects Kenya's M-Pesa mobile money system with the Bitcoin Lightning Network, enabling instant, low-cost Bitcoin payments using familiar M-Pesa interfaces.
 
-PesaBit connects Kenya's M-Pesa mobile money system with Bitcoin's Lightning Network, allowing anyone with a phone to:
+## 🌟 Features
 
-- **Receive global payments instantly** - Get tips from anywhere in the world to your phone
-- **Send money internationally** - 2-minute transfers for under 1% fee vs 8-15% traditional remittance
+- **⚡ Lightning Fast**: Instant Bitcoin payments via Lightning Network
+- **📱 Mobile First**: Progressive Web App optimized for smartphones
+- **🔐 Secure**: Phone number + PIN authentication with JWT tokens
+- **💰 Dual Wallet**: Seamless conversion between M-Pesa and Bitcoin
+- **🏗️ Microservices**: Scalable Rust backend architecture
+- **🔄 Real-time**: Live transaction updates and balance synchronization
+- **🛡️ Protected**: Rate limiting, input validation, and encrypted storage
 - **No crypto knowledge needed** - Uses familiar M-Pesa interface
 - **Lightning address included** - Get your own `yourname@pesa.co.ke` payment address
 
